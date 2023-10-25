@@ -1,7 +1,10 @@
-function [outputArg1,outputArg2] = dynamics(inputArg1,inputArg2)
-%DYNAMICS Summary of this function goes here
-%   Detailed explanation goes here
-outputArg1 = inputArg1;
-outputArg2 = inputArg2;
+% dynamic equations of the system 
+function dz = dynamics(t,z,p)
+    
+    % control input u, 4x1    
+    u = u(t,z)
+    dz = zeros(16,1);
+    dz(1:8) = z(9:end);
+    dz()
 end
 

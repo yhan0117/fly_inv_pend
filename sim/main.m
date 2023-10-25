@@ -24,7 +24,7 @@ u = @(t,z)control(t,z,p,c);
 %% Simultation
 disp("Producing simulation")
 options = odeset('RelTol',1e-8,'AbsTol',1e-8);
-[~, z] = ode45(@(t,z)cartPoleDynamics(t,z,c,u,p), r.t_s, p.z0, options);
+[~, z] = ode45(@(t,z)dynamics(t,z,c,u,p), r.t_s, p.z0, options);
 u = z(:,5);
 z = z(:,1:)';
 

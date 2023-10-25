@@ -1,0 +1,34 @@
+# Control parameters
+# PID gains
+pid:
+  # x
+  kp_x: 1.0
+  ki_x: 2.0
+  kd_x: 3.0
+  # theta
+  kp_t: 4.0
+  ki_t: 5.0
+  kd_t: 6.0
+looprate: 10
+zr:
+  - 0
+  - 180 # degrees
+  - 0
+  - 0
+  
+# Serial parameters
+port: 4
+timeout: 0.3
+
+# I2C error log
+error:
+  - "unknown error/ board not reachable"
+  - "busy timeout upon entering endTransmission()"
+  - "START bit generation timeout"
+  - "end of address transmission timeout"
+  - "data byte transfer timeout"
+  - "data byte transfer succeeded, busy timeout immediately after"
+  - "timeout waiting for peripheral to clear stop bit"
+  - "incorrect IMU WHO_AM_I address"
+  - "error during read opertation"
+  - "error during program execution, cannot reach target"
