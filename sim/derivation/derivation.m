@@ -18,6 +18,7 @@ I_g = [I1   0   0;
        0    I2  0;
        0    0   I3];
 
+% 
 
 %% Kinematics
 % quad kinematics
@@ -33,7 +34,7 @@ w_IB = simplify([eye(3)*[1;0;0] R(phi,1)^-1*[0;1;0] R(phi,1)^-1*R(theta,2)^-1*[0
 w = w_IB*diff([phi;theta;psi], t); w = w(t);
 
 % pendulum kinematics
-R_IC = R(alpha,1)*R(beta,2);
+R_IC = R(alpha,1)*R(beta,2)
 r_pg = R_IC*[0 0 l].'; % expressed in I
 r_po = r_pg + r_go;
 v_po = diff(r_po, t);  % wrt in I
@@ -58,12 +59,12 @@ for i = 1:8
 end
 
 for i = [1:3,7:8]
-    isolate(el_eqns(i), diff(q(i),t,2));
+    isolate(el_eqns(i), diff(q(i),t,2))
 end
 
 % obtain translational equations of motion from the implicit equations
-dda = rhs(isolate(el_eqns(7), diff(q(7),t,2)))
-ddb = rhs(isolate(el_eqns(8), diff(q(8),t,2)))
+dda = rhs(isolate(el_eqns(7), diff(q(7),t,2)));
+ddb = rhs(isolate(el_eqns(8), diff(q(8),t,2)));
 for i = 1:3
     eqns(i,1) = rhs(isolate(subs(el_eqns(i), diff(q(7:8),t,2), [dda ddb]), diff(q(i),t,2)));
 end
@@ -89,7 +90,7 @@ syms z [1 16]
 pos = subs(f(1:3), diff(q,t), z(9:end));
 k.pos = simplify(subs(pos, q, z(1:8)), "Steps", 10);
 
-save("dynamics.mat", 'k', 'param')
+% save("dynamics.mat", 'k', 'param')
 
 
 %% LQR
@@ -124,11 +125,11 @@ G = subs(G, [Z dZ U], ref);
 
 % general form
 k.A = -inv(E)*F;
-k.B = -inv(E)*G;
+k.B = -inv(E)*G
 % Ar = k.A([1,2,4,5,7,8,9,10,12,13,15,16],[1,2,4,5,7,8,9,10,12,13,15,16])
 % Br = k.B([1,2,4,5,7,8,9,10,12,13,15,16],:)
 
-save("dynamics.mat", 'k', 'param')
+% save("dynamics.mat", 'k', 'param')
 
 
 %% Functions  

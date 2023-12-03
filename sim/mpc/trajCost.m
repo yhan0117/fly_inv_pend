@@ -3,17 +3,14 @@ function J = trajCost(dv,t,c,p)
     
     % INPUTS:
     %   t = simulation time
-    %   dv = decision variable vector with first 4N corresponding to states, 5N x 1
+    %   dv = decision variable vector with first n*N corresponding to states, (n+m)*N x 1
     %   p = parameter struct
-    %       .l  = pendulum length
-    %       .m1 = cart mass
-    %       .m2 = pendulum mass
-    %       .g  = gravity
-    %       .L  = rail length
-    %       .s  = max input force (motor torque*radius)
-    %       .l_un  = pendulum length with uncertainty
-    %       .m1_un = cart mass with uncertainty
-    %       .m2_un = pendulum mass with uncertainty
+    %       m = quadcopter mass
+    %       g = gravity 
+    %       I = moment of inertia, 3 vector
+    %       K = actuator dynamics matrix
+    %       L = body rate to euler rate matrix B_L_I
+    %       R = body frame to inertial frame rotation matrix B_R_I
     %   c = control parameter struct
     %       .N = prediction horizon
     %       .t_pred = prediction time span
@@ -27,32 +24,30 @@ function J = trajCost(dv,t,c,p)
         
     % Unpack the control parameters         
     zt = p.zt(t);   % target state (time variant)
-    T = c.T';       % terminal cost
+    F = c.F';       % terminal cost
     Q = c.Q;        % error cost matrix
     R = c.R;        % actuation effort cost matrix
     N = c.N;        % control horizon 
 
     % extract from decision variables
-    % state vector, 4 x N
-    % control vector, 1 x N 
-    z = zeros(4, N);
-    u = zeros(1, N);
+    % state vector, 16 x N
+    % control vector, 4 x N 
+    z = zeros(16, N);
+    u = zeros(4, N);
 
     for i = 1:N
-        z(:,i) = dv(4*i-3:4*i);
-        u(i) = dv(4*N+i);
+        z(:,i) = dv(16*(i-1)+1:16*i);
+        u(:,i) = dv(16*N+4*(i-1)+1:16*N+4*i);
     end
 
-    % error 
-    e = z - zt;
-    
+    % deviation from reference trajectory 
+    x = z - zt;
+    u = u - [(p.mg+p.mp)*p.g;0;0;0];
+
     % Cost function
-    % QR form => explicit function of decision variables
-    JQ = sum(Q*(e.*e)*T, 'all');
+    JQ = sum(Q*(x.*x)*F, 'all');
     JR = sum(R*(u.*u), 'all');
     
     % total cost
     J = JQ+JR;
-
-    % gradient of J
 end

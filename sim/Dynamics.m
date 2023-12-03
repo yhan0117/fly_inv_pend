@@ -1,5 +1,5 @@
 % dynamic equations of the system 
-function dz = dynamics(t,z,u,p,k)
+function [dz,u] = dynamics(t,z,u,p,c,k)
 
     % INPUTS:
     %   t = simulation time 
@@ -17,8 +17,8 @@ function dz = dynamics(t,z,u,p,k)
     % OUTPUTS:
     %   dz = dz/dt = time derivative of states
 
-     % global loop time
-    global t_prev input u_prev;
+    % global loop time    
+    global t_prev input
 
     % unpack physical parameters
     l = p.l;    % quadcopter mass
@@ -29,24 +29,33 @@ function dz = dynamics(t,z,u,p,k)
     % predefined functions
     L   = k.L;    % angular velocity matrix
     pos = k.pos;    % translational dynamics function handle
-
+    
     % calculate control input u, 4x1    
-    if t-t_prev > p.t_l % wait until next control loop
+    if t-t_prev > c.dt_p % wait until next control loop
         disp(t)
+        tic
         u = u(t,z);
+        toc
 
-        % update global variables
-        u_prev = u;
-        input = [input;u'];
         t_prev = t;
-    else
-        u = u_prev;
-    end
-    U = K*u;  % motor mixing
 
+        % track input trajectory
+        input = [input;u'];
+    else
+        % if exist('c.N','var') == 1
+            global dv_prev
+            % disp(c.N);
+            u = dv_prev(16*c.N+1:16*(c.N+1));
+        % else
+        %     u = u(t_prev, z);
+        % end
+    end
+
+    %%
     % evaluate rotation matrices
     L = L(z(4),z(5));
-
+    % U = K*(u.^2);
+    U = u;
 
     %% equations of motion
     dz = zeros(16,1);
@@ -67,9 +76,12 @@ function dz = dynamics(t,z,u,p,k)
     dz(7:8) = z(15:16);
     dz(15) = (g*sin(z(7)) + cos(z(7))*dz(10)+ sin(z(7))*dz(11) + 2*l*sin(z(8))*z(15)*z(16))/(l*cos(z(8)));
     dz(16) = -(cos(z(8))*dz(9) - cos(z(7))*sin(z(8))*dz(11) + sin(z(7))*sin(z(8))*dz(10) - g*cos(z(7))*sin(z(8)) + l*cos(z(8))*sin(z(8))*z(15)^2)/l;
-
-    if t < 2.5 && t > 2
-        dz(15) = dz(15) + 1.2;
-    end
+        % 
+    % if t > 0.5 && t < 0.8
+    %     dz(15) = dz(15) + 0.1;
+    %     dz(16) = dz(16) + 0.1;
+    % end
 end
+
+
 

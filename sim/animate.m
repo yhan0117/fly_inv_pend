@@ -21,7 +21,7 @@ function animate(z,p,r,k,record,filename)
     ylabel('y', 'Interpreter', 'Latex')
     zlabel('z', 'Interpreter', 'Latex')
     grid minor; axis equal; rotate3d on;
-    xlim([-1.5 1.5]); ylim([-1.5 1.5]); zlim([0 3]); 
+    xlim([-2 2]); ylim([-2 2]); zlim([0 3]); 
     
     % plotting with no color to set axis limits
     plot3(x,y,z,'Color','none');
