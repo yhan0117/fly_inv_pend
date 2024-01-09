@@ -1,126 +1,127 @@
-% Flying Inverted Pendulum with model predicitve control
+% The MIT License (MIT)
+%
+% Copyright August, 2023 Han Yang, Universtiy of Maryland
+%
+% Permission is hereby granted, free of charge, to any person obtaining a copy
+% of this software and associated documentation files (the "Software"), to deal
+% in the Software without restriction, including without limitation the rights
+% to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+% copies of the Software, and to permit persons to whom the Software is
+% furnished to do so, subject to the following conditions:
+%
+% The above copyright notice and this permission notice shall be included in
+% all copies or substantial portions of the Software.
+%
+% 
+% THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+% IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+% FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+% AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+% LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+% OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+% THE SOFTWARE.
+
+%% Flying Inverted Pendulum with Adaptive Model Predicitve Control
+
 clc; clear; clear global; close all;
 
+% load corresponding test data
 trial = 1; 
-record = 1; 
-controller = 'mpc';
+load("test_data/trial" + trial + ".mat")
+
 
 %% Parameters
 %   p = physical parameters
-%   r = recording specs
+%   k = predefined functions
 
-% load test case
-load("test cases/trial" + trial + ".mat")
-
-% load precalculat5ed functions 
+% setup predefined equations
 load("derivation/dynamics.mat")
-k.pos = matlabFunction(subs(k.pos, param, p.param));
-
-% initial states
-z0 = p.z0;
-
-%% Control
-% change to the controller folder
-addpath(append(pwd,'\',controller))
-zt = @(t) [0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0]'; p.zt = zt; 
-
-if strcmp(controller,'lqr') 
-    % control parameters
-    A = double(subs(k.A, param, p.param));
-    B = double(subs(k.B, param, p.param));
-    c.Q = diag([.05 .05 .8 .1 .1 eps 5 5 .2 .2 .2 .1 .1 .05 .4 .4]);
-    c.R = diag([.3 .3 .3 .3]);
-    c.K = lqr(A,B,c.Q,c.R);
+k.pos = matlabFunction(subs(k.pos, param, p.param));    % substitute in testing parameters
     
-    % feedback control law u = f(t,z)
-    u = @(t,z) control(t,z,p,c);
-    global t_prev input u_prev;  
-    t_prev = -inf;
-    input = [];
-    u_prev = 0;
+% initial states
+z0 = [0 0 1 0 0 0 12/180*pi 9/180*pi 0 0 0 0 0 0 0 0]'; 
 
-    % control loop latency
-    c.dt_p = 2/62;  % 2000 Hz
+% reference trajectory      
+p.zd = @(t) [0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0]'; 
 
-elseif strcmp(controller,'mpc')
-    % MPC optimization params
-    % 1 step control horizon
-    N = 60;  c.N = N;       % predicition horizon 
-    t_pred = 2; c.t_pred = t_pred; % prediction time span
-    c.dt_p = t_pred/N;      % prediction step size
+% intialize global variables to keep track of simulation time and simulate loop latency
+global t_prev u_prev   
+t_prev = -inf;
+u_prev = zeros(4,1);
 
-    % options for NLP Solver
-    options = optimoptions('fmincon','TolX', 1e-7, 'TolFun', 1e-7, 'TolCon', 1e-9, 'MaxIterations', 1000,'MaxFunEvals',100000,...
-        'DiffMinChange',1e-5, 'GradObj','off', 'GradConstr','off',...
-        'DerivativeCheck', 'off', 'Display', 'final', 'Algorithm','sqp', 'UseParallel', true);
+% L1 control variables
+global sig_m sig_um z_hat u_L1_prev;
+sig_m = zeros(4,1);     % matched uncertainty estimate
+sig_um = zeros(2,1);    % unmatched uncertainty estimate
+z_hat = z0(9:14);       % state prediction
+u_L1_prev = zeros(4,1); % previous control action (for low pass filter)
 
-    % Cost matrices
-    c.F = 1+(1.2*(0:N-1)/N).^16;    %    weight for each break point
-    c.Q = diag([5 5 5 5 5 0.1 20 20 .5 .5 .7 1 1 1 4 4]);  % tracking error cost
-    c.R = diag([0.1 0.5 0.5 0.1]);           % actuation effort
+% MPC decision variables 
+% control input and states over the discretized predicted trajectory
+global dv_prev  
 
-    % global variable to keep track of simulated control loop time and input 
-    % during iterated call of ode45
-    global dv_prev t_prev output input u_prev;  
-    t_prev = -inf;
-    output = [];
-    dv_prev = zeros(20*N,1); % <-- first initial guess of the optimization solver
-    input = [];
-    u_prev = 0;
+%% Controller Parameters
+%   c = controller parameters
 
-    load("opt.mat")
-    for i=1:N
-        dv_prev(16*(i-1)+1:16*i) = ZZ(i,:);  % linear interpolation 
-        dv_prev(16*N+4*(i-1)+1:16*N+4*i) = IN(i,:);
-    end
+% ------------ tuning parameters ------------
+% loop frequency
+f = 100;
+p.ts = 1/f;
 
-    % feedback controller u = f(t,z)
-    u = @(t,z)control(t,z,p,c,k,options);
+% MPC
+% cost matrices (must be strictly positive definite)
+c.Q = diag([10 10 10 1 1 1 5 5 5 5 5 1 1 1 3 3]); 
+c.R = diag([0.3 0.3 0.3 0.3]);
+c.F = diag([10 10 10 1 1 1 5 5 5 5 5 1 1 1 3 3]); 
+% prediction horizon
+c.N = 30;
+% initial guess of the optimization solver decision variables
+dv_prev = zeros(5*N,1); 
+for i=1:c.N
+    dv_prev(16*i-15:16*i) = z0 + (i-1)*(p.zd(0)-z0)/(c.N-1);  % linear interpolation 
 end
+
+% options for fmincon solver
+options = optimoptions('fmincon','TolX', 1e-9, 'TolFun', 1e-9, 'TolCon', 1e-9, 'MaxIterations', 100,'MaxFunEvals',10000,...
+    'DiffMinChange',1e-5, 'GradObj','off', 'GradConstr','off',...
+    'DerivativeCheck', 'off', 'Display', 'final', 'Algorithm','sqp', 'UseParallel', true);
+
+% L1 control
+% state observer gain matrix (must be Hurwitz)
+c.As = diag([-25 -25.01 -25.02 -25.03 -25.04 -25.05]); 
+% low pass filter cross-over frequency
+c.w_co = 2;
+% ------------------------------------------
+
+% some precalculated quantities --> don't change 
+c.eAs = expm(As*p.ts);
+c.Phi = inv(As)*(c.eAs - eye(6));
+syms s
+c.H = matlabFunction(ilaplace([[2*eye(3);zeros(1,3)] [1 0 0;0 1 0;0 0 0;0 0 1]] * inv(s*eye(6) - As)));
+
+% feedback controller 
+u = @(t,z)control(t,z,p_m,c,k,options); % uses mismatched parameters
+
 
 %% Simultation
 disp("Producing simulation")
-options = odeset('RelTol',1e-9,'AbsTol',1e-9);
-[~, z] = ode45(@(t,z)dynamics(t,z,u,p,c,k), r.t_s, z0, options);
 
+% options for Runge-Kutta solvers
+options = odeset('RelTol',1e-7,'AbsTol',1e-7);
 
-%% Save data
-if record
-    if ~exist(controller + "\data", 'dir')
-       mkdir(controller + "\data")    % make sure directory exist
-    end
-    save(controller + "\data\trial" + trial + ".mat", 'z', 'z0', 'u', 'c','p')
-end
-
-
-%% Plot 
-% if record
-%     figure(1); clf; hold on;
-%     plotCartPole(t_s,z,u); % <-- plot results
-%     set(gcf,"WindowState",'maximized')
-%     saveas(gcf, path + "\plots\trial" + trial + ".jpg") 
-% end  
+% numerical simulation step!
+[~, z] = ode45(@(t,z)dynamics(t,z,u,p,k), r.t_s, z0, options);
 
 
 %% Animation
-filename = controller + "\animations\trial" + trial + ".gif";
-if record     
-    if ~exist(controller + "\animations", 'dir')
-        mkdir(controller + "\animations") % make sure directory exist
-    elseif exist(filename, "file") 
-        delete(filename)    % clear existing file
-    end
-end
-
-% Create and clear a figure
-figure(2); clf;
+% create and clear a figure
+figure(1); clf;
 set(gcf,"position", [0,0,900,600])  % set window size
 movegui(gcf, 'center');             % center animation
-view(-25,25);                         % initial view angle, adjustable
+view(-25,25);                       % initial view angle, adjustable
 
-animate(z,p,r,k,record,filename)  % <-- produce animation
+animate(z,p,r,k)  % <-- produce animation
 
 disp("Done!!")
 close all
-
 
