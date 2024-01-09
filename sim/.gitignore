@@ -5,4 +5,4 @@
 *.gdoc
 *.lnk
 docs/*
-backup/
+backup/*
