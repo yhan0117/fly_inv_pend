@@ -44,7 +44,7 @@ function J = trajCost(dv,t,c,p)
        
     %% Constants & Parameters
     % control parameters         
-    F = c.T;        % terminal cost
+    F = c.F;        % terminal cost
     Q = c.Q;        % error cost matrix
     R = c.R;        % actuation effort cost matrix
     N = c.N;        % control horizon
@@ -52,7 +52,7 @@ function J = trajCost(dv,t,c,p)
     % reference trajectory
     zd = zeros(N,1);
     for i = 1:N
-        zd = p.zd(t + (i-1)*p.ts);   
+        zd = c.zd(t + (i-1)*c.ts);   
     end
 
     % extract from decision variables

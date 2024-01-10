@@ -6,6 +6,4 @@
 *.lnk
 docs/*
 backup/
-**/crazyflie cage/*
-**/Crazyflie_CAD/*
-inverted pend/*
+presentation/

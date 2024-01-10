@@ -46,7 +46,7 @@ function [c, ceq] = collocationCon(dv,p,c,k)
 
     %% Constants & Parameters
     % control parameters
-    dt = p.ts;    % prediction time interval
+    dt = c.ts;    % prediction time interval
     N = c.N;        % prediction horizon
     step = 1e-8;    % step size for approximating jacobian with finite differencing
 

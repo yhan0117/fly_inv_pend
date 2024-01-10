@@ -30,7 +30,8 @@ p.mg = 0.9;                 % quadcopter mass
 p.mp = 0.05;                % pendulum mass
 p.l = 1.5;                  % pendulum length
 p.g = 9.8;                  % gravity 
-p.s = 18000;                % motor saturation
+p.s_min = 1000;             % motor minimun speed
+p.s_max = 18000;            % motor saturation
 p.d = 0.15;             d = p.d;    % quadcopter arm length
 p.Cd = 4.370E-9;        Cd = p.Cd;  % propeller drag coefficient
 p.Cl = 2.721E-8;        Cl = p.Cl;   % propeller lift coefficient
@@ -50,7 +51,8 @@ p_m.mg = 0.9;                   % quadcopter mass
 p_m.mp = 0.05;                  % pendulum mass
 p_m.l = 1.5;                    % pendulum length
 p_m.g = 9.8;                    % gravity 
-p_m.s = 18000;                  % motor saturation
+p_m.s_min = 1000;               % motor minimun speed
+p_m.s_max = 18000;              % motor saturation
 p_m.d = 0.15;             d = p_m.d;    % quadcopter arm length
 p_m.Cd = 4.370E-9;        Cd = p_m.Cd;  % propeller drag coefficient
 p_m.Cl = 2.721E-8;        Cl = p_m.Cl;  % propeller lift coefficient
@@ -67,10 +69,11 @@ r.t_s = linspace(0,r.tspan,r.tspan*r.fps);  % simulation time steps
 
 
 %% Save Test Data
-if ~exist(controller + "\test_data", 'dir')
-        mkdir(controller + "\animations") % make sure directory exist
+if ~exist("test_data", 'dir')
+    disp("Creating directory for test data storage")
+    mkdir("test_data") % make sure directory exist
 end
 if exist("test_data/trial" + num2str(r.trial) + ".mat", "file") 
     delete("test_data/trial" + num2str(r.trial) + ".mat")    % clear existing file
 end
-save("test cases/trial" + num2str(r.trial) + ".mat")
+save("test_data/trial" + num2str(r.trial) + ".mat")

@@ -5,4 +5,6 @@
 *.gdoc
 *.lnk
 docs/*
-backup/*
+backup/
+crazyflie cage/
+print files/

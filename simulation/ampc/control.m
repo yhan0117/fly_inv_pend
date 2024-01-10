@@ -70,9 +70,9 @@ function u = control(t,z,p,c,k,opt)
     % boundary constraints
     lb = -inf(20*N,1);
     ub = inf(20*N,1);
-    lb(3:16:16*(N-1)+4) = repmat(0,N,1);    % ground
-    lb(16*N+1:end) = repmat(0,N,1);      % thrust saturation
-    ub(16*N+1:end) = repmat(p.s,N,1);      % minimium thrust
+    lb(3:16:16*(N-1)+4) = repmat(0,N,1);        % ground
+    lb(16*N+1:end) = repmat(p.s_min,4*N,1);      % thrust saturation
+    ub(16*N+1:end) = repmat(p.s_max,4*N,1);      % min  imium thrust
 
     % initial condition
     Aeq = zeros(16, 20*N);
@@ -121,7 +121,7 @@ function u = control(t,z,p,c,k,opt)
     u_L1 = sig_m + (Hm\Hum)*sig_um;
 
     % low pass filter
-    u_L1 = u_L1_prev*exp(-c.w_co*p.ts) - u_L1*(1-exp(-c.w_co*p.ts));
+    u_L1 = u_L1_prev*exp(-c.w_co*c.ts) - u_L1*(1-exp(-c.w_co*c.ts));
     u_L1_prev = u_L1;
 
 
@@ -133,7 +133,7 @@ function u = control(t,z,p,c,k,opt)
         (z(12)*z(13)*(p.I(2)-p.I(3)) + u_MPC(4))/p.I(3)];
 
     % update prediction with new uncertainty with 1st order Euler's method    
-    z_hat = z_hat + (f + g*(u_L1_prev + sig_m) + g_perp*sig_um + c.As*e)*p.ts;
+    z_hat = z_hat + (f + g*(u_L1_prev + sig_m) + g_perp*sig_um + c.As*e)*c.ts;
 
    
     %% Final control action
