@@ -47,12 +47,15 @@ catch
     disp("Generate Predefined Functions First!! (derivation.m)")
 end
 k.pos = matlabFunction(subs(k.pos, param, p.param));    % substitute in testing parameters
-    
+
+% ------------ change according to mission plan ------------
 % initial states
 z0 = [0 0 1 0 0 0 12/180*pi 9/180*pi 0 0 0 0 0 0 0 0]'; 
 
 % reference trajectory      
 c.zd = @(t) [0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0]'; 
+% ----------------------------------------------------------
+
 
 % intialize global variables to keep track of simulation time and simulate loop latency
 global t_prev u_prev   
@@ -109,8 +112,10 @@ c.Phi = inv(c.As)*(c.eAs - eye(6));
 syms s
 c.H = matlabFunction(ilaplace([[2*eye(3);zeros(1,3)] [1 0 0;0 1 0;0 0 0;0 0 1]] * inv(s*eye(6) - c.As)));
 
-% include controller in path (change if custom controller are used)
+% ---------------- change if custom controllers were used ----------------
+% include controller in path 
 addpath(controller + "\")
+% ------------------------------------------------------------------------
 
 % feedback controller 
 u = @(t,z)control(t,z,p_m,c,k,options); % uses mismatched parameters
