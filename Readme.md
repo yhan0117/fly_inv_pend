@@ -1,6 +1,6 @@
 # Flying Inverted Pendulum Using Adaptive Model Predictive Control
 
-This repo contains the code associated to our paper on [Trajectory Tracking while Stabilizating an Inverted Pendulum on a Quadcopter Using Adaptive Model Predictive Control](https://arc.aiaa.org/doi/abs/10.2514/6.2024-0713). This work is developed at the **Motion and Teaming Lab** at the University of Maryland, College Park, by **Han Yang**, **Mohamed Khalid M Jaffer**, and **Michael Otte**.
+This repo contains the code associated to our paper on [Trajectory Tracking while Stabilizating an Inverted Pendulum on a Quadcopter Using Adaptive Model Predictive Control](https://arc.aiaa.org/doi/abs/10.2514/6.2024-0713) as well as any future progress on this topic. This work is developed at the **Motion and Teaming Lab** at the University of Maryland, College Park, by **Han Yang**, **Mohamed Khalid M Jaffer**, and **Michael Otte**.
 
 ## Minimal Requirements
 To run the simulation, Matlab 2020+ is required. The optimization toolbox must also be Installed
