@@ -1,7 +1,6 @@
 *.ini
 **/desktop.ini
 *.csv
-*jpg
 *.gdoc
 *.lnk
 docs/summer_23/
